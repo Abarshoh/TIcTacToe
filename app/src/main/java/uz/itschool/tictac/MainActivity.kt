@@ -1,21 +1,40 @@
 package uz.itschool.tictac
 
 import android.annotation.SuppressLint
+import android.media.MediaPlayer
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.view.View.OnClickListener
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.ImageButton
+import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), OnClickListener {
-    var matrix =Array(3){IntArray(3){-1} }
+    private var matrix = Array(3) { IntArray(3) { -1 } }
     var active = true
-    @SuppressLint("SetTextI18n")
+    private var NameX = ""
+    private var NameO = ""
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        active_player.text =" Player X "
+
+
+
+        NameX = intent.getStringExtra("playerX").toString()
+        NameO = intent.getStringExtra("player0").toString()
+
+
+
+        player1.text = NameX
+        player2.text = NameO
+
+        active_player.text = NameX
 
         img0.setOnClickListener(this)
         img1.setOnClickListener(this)
@@ -29,45 +48,56 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         restart.setOnClickListener {
             restart()
         }
+
     }
 
+    var k = 0
     override fun onClick(p0: View?) {
         val img = findViewById<ImageButton>(p0!!.id)
-        val t =img.tag.toString().toInt()
-        val col:Int =t/3
-        val row: Int = t%3
-        if (matrix[col][row] == -1){
-            if (active){
+        val t = img.tag.toString().toInt()
+        val col: Int = t / 3
+        val row: Int = t % 3
+        if (matrix[col][row] == -1) {
+            if (active) {
                 img.setImageResource(R.drawable.x_sign)
                 active = false
                 matrix[col][row] = 1
                 isWinner(1)
-                active_player.text = "Player O"
-            }else{
+                active_player.text = NameO
+                k++
+            } else {
                 img.setImageResource(R.drawable.o_sign)
                 active = true
                 matrix[col][row] = 0
                 isWinner(0)
-                active_player.text = "Player X"
+                active_player.text = NameX
+                k++
             }
         }
+
+        if (k == 9) {
+            winner.text = "Draw"
+            finishGame()
+        }
     }
+
     var count = 0
-    private fun isWinner(a:Int){
-        horizontal(a)
+    private fun isWinner(a: Int) {
+        horizontalCheck(a)
         count = 0
 
-        vertical(a)
+        verticalCheck(a)
         count = 0
 
-        diognalOne(a)
+        fromLeftTopToRightBottomCheck(a)
         count = 0
 
-        diagnalTwo(a)
+        fromRightTopToBottomCheck(a)
         count = 0
 
     }
-    private fun horizontal(a:Int){
+
+    private fun horizontalCheck(a: Int) {
         for (i in 0..2) {
             for (j in 0..2) {
                 if (matrix[i][j] == a) {
@@ -78,7 +108,8 @@ class MainActivity : AppCompatActivity(), OnClickListener {
             count = 0
         }
     }
-    private fun vertical(a: Int) {
+
+    private fun verticalCheck(a: Int) {
         for (i in 0..2) {
             for (j in 0..2) {
                 if (matrix[j][i] == a) {
@@ -89,7 +120,8 @@ class MainActivity : AppCompatActivity(), OnClickListener {
             count = 0
         }
     }
-    private fun diognalOne(a: Int) {
+
+    private fun fromLeftTopToRightBottomCheck(a: Int) {
         for (i in 0..2) {
             for (j in 0..2) {
                 if (i == j) {
@@ -101,7 +133,8 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         }
         showWinnerName(a)
     }
-    private fun diagnalTwo(a: Int) {
+
+    private fun fromRightTopToBottomCheck(a: Int) {
         for (i in 0..2) {
             for (j in 0..2) {
                 if (i + j == 2) {
@@ -113,19 +146,7 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         }
         showWinnerName(a)
     }
-    private fun showWinnerName(a:Int){
-        var name = ""
-        if (a==0){
-            name = "Player 0"
-        }else{
-            name = "Player X"
-        }
-        if (count == 3){
-            winner.text = "Winner is $name"
-            finishGame()
-            return
-        }
-    }
+
     private fun finishGame() {
         img0.isEnabled = false
         img1.isEnabled = false
@@ -137,13 +158,16 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         img7.isEnabled = false
         img8.isEnabled = false
         restart.visibility = View.VISIBLE
+        k = 0
     }
 
-    private fun restart(){
+    private fun restart() {
         matrix = Array(3) { IntArray(3) { -1 } }
         active = true
-        active_player.text = "Player X"
-        restart.visibility = View.VISIBLE
+        active_player.text = NameX
+
+        restart.visibility = View.INVISIBLE
+
         winner.text = ""
 
         img0.isEnabled = true
@@ -156,7 +180,6 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         img7.isEnabled = true
         img8.isEnabled = true
 
-
         img0.setImageDrawable(null)
         img1.setImageDrawable(null)
         img2.setImageDrawable(null)
@@ -166,10 +189,23 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         img6.setImageDrawable(null)
         img7.setImageDrawable(null)
         img8.setImageDrawable(null)
+
+        k = 0
     }
 
+    private fun showWinnerName(a: Int) {
+        var winnerName = ""
+        winnerName = if (a == 0) NameO else NameX
 
-
-
-
+        if (count == 3) {
+            winner.text = "Winner is $winnerName"
+            if (a == 1) {
+                player1_score.text = (player1_score.text.toString().toInt() + 1).toString()
+            } else {
+                player2_score.text = (player1_score.text.toString().toInt() + 1).toString()
+            }
+            finishGame()
+            return
+        }
+    }
 }
